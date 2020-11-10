@@ -1,22 +1,36 @@
-version: '3.5'
+version: '3.7'
 services:
+  main:
+    container_name: nestjs
+    build:
+      context: .
+      target: development
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3000:3000'
+    command: yarn run start:dev
+    networks:
+      - webnet
+    depends_on:
+      - postgres
   postgres:
-    container_name: postgres_container
-    image: postgres
+    container_name: postgres
+    image: postgres:12
+    networks:
+      - webnet
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_DATABASE_NAME:-taskmanagement}
       PGDATA: /data/postgres
-    volumes:
-      - postgres:/data/postgres
     ports:
-      - '5432:5432'
-    networks:
-      - postgres
-    restart: unless-stopped
-
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
   pgadmin:
-    container_name: pgadmin_container
+    container_name: pgadmin
     image: dpage/pgadmin4
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
@@ -26,13 +40,11 @@ services:
     ports:
       - '${PGADMIN_PORT:-5050}:80'
     networks:
-      - postgres
+      - webnet
     restart: unless-stopped
 
 networks:
-  postgres:
-    driver: bridge
-
+  webnet:
 volumes:
-  postgres:
+  pgdata:
   pgadmin:
